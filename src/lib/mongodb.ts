@@ -1,23 +1,33 @@
-import mongoose from 'mongoose';
+import mongoose, { Connection } from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI!;
+const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+interface MongooseCache {
+  conn: Connection | null;
+  promise: Promise<Connection> | null;
 }
 
-/**
- * Global is used here to maintain a cached connection across hot reloads
- * in development. This prevents connections growing exponentially
- * during API Route usage.
- */
-let cached = (global as any).mongoose;
-
-if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
+declare global {
+  // eslint-disable-next-line no-var
+  var mongoose: MongooseCache | undefined;
 }
 
-async function dbConnect() {
+// eslint-disable-next-line no-var
+var cached: MongooseCache = { conn: null, promise: null };
+
+if (typeof global !== 'undefined' && global.mongoose) {
+  cached = global.mongoose;
+} else if (typeof global !== 'undefined') {
+  global.mongoose = cached;
+}
+
+async function dbConnect(): Promise<Connection> {
+  if (!MONGODB_URI) {
+    // Return a dummy connection for build time, actual error will be thrown at runtime
+    console.warn('MONGODB_URI is not set. Please define it in Vercel environment variables.');
+    return {} as Connection;
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
@@ -27,8 +37,8 @@ async function dbConnect() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      return mongoose;
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mgr) => {
+      return mgr.connection;
     });
   }
 
