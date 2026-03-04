@@ -6,6 +6,14 @@
 - [x] Ensure responsive design and basic error handling in UI
 - [x] Manually test frontend functionality
 
+## Phase 2: Source Integration
+- [x] Create Source model for storing manga sources
+- [x] Implement source scraper interface and implementations
+- [x] Add Asura Scans scraper with web scraping
+- [x] Create API routes for managing sources
+- [x] Add "Sources" button to homepage with modal
+- [x] Implement dynamic manga loading from selected sources
+
 ## Phase 3: Database Integration
 - [x] Expand data storage for user favorites, reading history, or manga metadata
 - [x] Integrate with existing MongoDB setup in src/lib/mongodb.ts
@@ -24,6 +32,7 @@
 ## Phase 7: Additional Features
 - [ ] Add more API routes (e.g., for chapters, user profiles)
 - [ ] Implement features like manga recommendations
+- [ ] Add more manga sources (e.g., MangaKakalot, MangaNato)
 
 ## Phase 8: Deployment and CI/CD
 - [ ] Set up deployment to Vercel or another platform
