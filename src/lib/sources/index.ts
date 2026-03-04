@@ -1,40 +1,48 @@
-// Source scraper interface
-export interface ScraperResult {
+import { scrapeAsuraScans, ScrapedManga } from './asurascans';
+import { scrapeManganato } from './manganato';
+import { scrapeMangakakalot } from './mangakakalot';
+
+export interface MangaSource {
   id: string;
-  title: string;
-  coverUrl?: string;
-  description?: string;
-  status?: string;
-  author?: string;
-  genres?: string[];
-  chapters?: number;
-  url: string;
-  year?: number;
-}
-
-export interface SourceScraper {
   name: string;
-  baseUrl: string;
-  getPopularManga(): Promise<ScraperResult[]>;
-  searchManga(query: string): Promise<ScraperResult[]>;
-  getMangaDetails(id: string): Promise<ScraperResult>;
+  url: string;
+  scrape: () => Promise<ScrapedManga[]>;
 }
 
-// Export all available scrapers
-import asuraScansScraper from './asurascans';
-import manganatoScraper from './manganato';
-import mangakakalotScraper from './mangakakalot';
+export const sources: MangaSource[] = [
+  {
+    id: 'asurascans',
+    name: 'Asura Scans',
+    url: 'https://asurascans.com',
+    scrape: scrapeAsuraScans,
+  },
+  {
+    id: 'manganato',
+    name: 'Manganato',
+    url: 'https://manganato.com',
+    scrape: scrapeManganato,
+  },
+  {
+    id: 'mangakakalot',
+    name: 'Mangakakalot',
+    url: 'https://mangakakalot.com',
+    scrape: scrapeMangakakalot,
+  },
+];
 
-export const sources: Record<string, SourceScraper> = {
-  asurascans: asuraScansScraper,
-  manganato: manganatoScraper,
-  mangakakalot: mangakakalotScraper,
-};
-
-export function getScraper(scraperName: string): SourceScraper | null {
-  return sources[scraperName] || null;
+export async function scrapeSource(sourceId: string): Promise<ScrapedManga[]> {
+  const source = sources.find(s => s.id === sourceId);
+  if (!source) {
+    throw new Error(`Source ${sourceId} not found`);
+  }
+  return source.scrape();
 }
 
+export function getSources() {
+  return sources.map(s => ({ id: s.id, name: s.name, url: s.url }));
+}
+
+// This function returns all available source IDs/names
 export function getAllSourceNames(): string[] {
-  return Object.keys(sources);
+  return sources.map(s => s.id);
 }

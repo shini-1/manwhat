@@ -1,161 +1,146 @@
-
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { SourceScraper, ScraperResult } from './index';
 
-class MangakakalotScraper implements SourceScraper {
-  name = 'Mangakakalot';
-  baseUrl = 'https://mangakakalot.com';
-
-  async getPopularManga(): Promise<ScraperResult[]> {
-    try {
-      const response = await axios.get(`${this.baseUrl}/`, {
-        timeout: 15000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-        },
-      });
-
-      const $ = cheerio.load(response.data);
-      const results: ScraperResult[] = [];
-
-      const selectors = [
-        '.panel-popular .item', 
-        '.item-updated .item',
-        '.home__allUpdated .item',
-        '.section-update .item',
-        'div.item',
-        '.story-item',
-        '.trending-item'
-      ];
-
-      for (const selector of selectors) {
-        $(selector).each((_, element) => {
-          const $el = $(element);
-          const linkEl = $el.find('a').first();
-          const title = linkEl.attr('title') || linkEl.text()?.trim() || '';
-          const url = linkEl.attr('href') || '';
-          
-          if (title && url && url.includes('/manga/')) {
-            const id = url.replace(/.*\/manga\//, '').replace(/\/$/, '');
-            const imgEl = $el.find('img').first();
-            const coverUrl = imgEl.attr('src') || imgEl.attr('data-src') || '';
-            
-            const yearMatch = $el.text().match(/\b(19|20)\d{2}\b/);
-            const year = yearMatch ? parseInt(yearMatch[0]) : undefined;
-
-            results.push({
-              id,
-              title,
-              coverUrl: coverUrl.startsWith('http') ? coverUrl : `${this.baseUrl}${coverUrl}`,
-              url: url.startsWith('http') ? url : `${this.baseUrl}${url}`,
-              year,
-            });
-          }
-        });
-        
-        if (results.length > 0) break;
-      }
-
-      console.log(`Mangakakalot: Found ${results.length} manga from popular page`);
-      return results.slice(0, 50);
-    } catch (error) {
-      console.error('Error fetching from Mangakakalot:', error);
-      return [];
-    }
-  }
-
-  async searchManga(query: string): Promise<ScraperResult[]> {
-    try {
-      const searchUrl = `${this.baseUrl}/search/${encodeURIComponent(query)}`;
-      const response = await axios.get(searchUrl, {
-        timeout: 15000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
-      });
-
-      const $ = cheerio.load(response.data);
-      const results: ScraperResult[] = [];
-
-      $('.story_item, .search-item, .item').each((_, element) => {
-        const $el = $(element);
-        const linkEl = $el.find('a').first();
-        const title = linkEl.attr('title') || $el.find('.item-title').text()?.trim() || '';
-        const url = linkEl.attr('href') || '';
-        
-        if (title && url && url.includes('/manga/')) {
-          const id = url.replace(/.*\/manga\//, '').replace(/\/$/, '');
-          const imgEl = $el.find('img').first();
-          const coverUrl = imgEl.attr('src') || '';
-
-          results.push({
-            id,
-            title,
-            coverUrl: coverUrl.startsWith('http') ? coverUrl : `${this.baseUrl}${coverUrl}`,
-            url: url.startsWith('http') ? url : `${this.baseUrl}${url}`,
-          });
-        }
-      });
-
-      return results.slice(0, 20);
-    } catch (error) {
-      console.error('Error searching Mangakakalot:', error);
-      return [];
-    }
-  }
-
-  async getMangaDetails(id: string): Promise<ScraperResult> {
-    try {
-      const url = `${this.baseUrl}/manga/${id}`;
-      const response = await axios.get(url, {
-        timeout: 15000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
-      });
-
-      const $ = cheerio.load(response.data);
-      
-      const title = $('.item-title h1, .story-info-right h1, h1.title').text()?.trim() || '';
-      const description = $('.item-description, .story-description, #panel-story-info-description').text()?.trim() || '';
-      const coverUrl = $('.info-image img, .story-info-left img').attr('src') || '';
-      
-      const status = $('.status, .story-info-right .story-info-right-item').filter((_, el) => 
-        $(el).text().toLowerCase().includes('status')
-      ).text().replace(/status/i, '').trim() || '';
-      
-      const author = $('.author, .story-info-right .story-info-right-item').filter((_, el) => 
-        $(el).text().toLowerCase().includes('author')
-      ).text().replace(/author/i, '').trim() || '';
-
-      const genres: string[] = [];
-      $('.kind, .genres a, .story-info-right .story-info-right-item .element-list a').each((_, el) => {
-        const genre = $(el).text()?.trim();
-        if (genre) genres.push(genre);
-      });
-
-      const chapters = $('#chapter-list .chapter, .chapter-list .chapter-item, .row-content-chapter .chapter-item').length;
-
-      return {
-        id,
-        title,
-        coverUrl: coverUrl.startsWith('http') ? coverUrl : `${this.baseUrl}${coverUrl}`,
-        description,
-        status,
-        author,
-        genres,
-        chapters,
-        url,
-      };
-    } catch (error) {
-      console.error('Error fetching manga details from Mangakakalot:', error);
-      throw error;
-    }
-  }
+export interface ScrapedManga {
+  id: string;
+  title: string;
+  coverUrl?: string;
+  url: string;
+  status?: string;
+  genres?: string[];
+  description?: string;
 }
 
-export default new MangakakalotScraper();
+export async function scrapeMangakakalot(): Promise<ScrapedManga[]> {
+  try {
+    // Try the main home page first
+    const response = await axios.get('https://mangakakalot.com', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      timeout: 30000,
+    });
 
+    const $ = cheerio.load(response.data);
+    const mangaList: ScrapedManga[] = [];
+
+    // Mangakakalot uses different selectors - try multiple patterns
+    const selectors = [
+      // Main content area selectors
+      '.panel-home-book-item',
+      '.story-item',
+      '.update-item',
+      '.popular-manga-item',
+      '.home-wrapper .story-item',
+      // Alternative patterns
+      'div.book-item',
+      'div.story-item',
+      '.items .item',
+      // Search results pattern
+      '.search-results .result',
+      '.story_find .item',
+      // Generic patterns
+      'a[href*="/manga/"]',
+    ];
+
+    for (const selector of selectors) {
+      if (mangaList.length > 0) break;
+      
+      $(selector).each((_, element) => {
+        const $element = $(element);
+        
+        // Try to find title - look in multiple places
+        let title = '';
+        
+        // For anchor tags, try different approaches
+        if ($element.is('a')) {
+          title = $element.attr('title') || 
+                  $element.text().trim() || 
+                  $element.find('img').attr('alt') || '';
+        } else {
+          title = $element.find('.story-title, .title, h3, h4, a').text().trim() ||
+                  $element.attr('title') ||
+                  $element.find('img').attr('alt') ||
+                  '';
+        }
+        
+        // Get URL from anchor tag
+        let url = $element.find('a').attr('href') || $element.attr('href') || '';
+        
+        // Get cover image
+        let coverUrl = $element.find('img').attr('src') || 
+                       $element.find('img').attr('data-src') ||
+                       $element.find('img').attr('data-lazy-src') || '';
+
+        // Clean up title
+        title = title.replace(/\n/g, ' ').trim();
+        
+        // Skip if no valid data
+        if (!title || title.length < 2) return;
+        
+        // For generic anchor selector, filter to only manga URLs
+        if (selector === 'a[href*="/manga/"]' && !url.includes('/manga/')) return;
+        
+        if (!url || !url.includes('/manga/')) return;
+        
+        // Create a unique ID from the URL
+        const urlParts = url.split('/').filter(Boolean);
+        const id = urlParts[urlParts.length - 1] || Math.random().toString(36).substring(7);
+        
+        // Make sure URL is absolute
+        url = url.startsWith('http') ? url : `https://mangakakalot.com${url}`;
+        
+        // Make sure cover URL is absolute
+        if (coverUrl && !coverUrl.startsWith('http')) {
+          coverUrl = coverUrl.startsWith('//') ? `https:${coverUrl}` : `https://mangakakalot.com${coverUrl}`;
+        }
+
+        // Avoid duplicates
+        if (mangaList.some(m => m.id === id || m.title === title)) return;
+
+        mangaList.push({
+          id,
+          title,
+          coverUrl: coverUrl || '',
+          url,
+        });
+      });
+      
+      if (mangaList.length > 0) {
+        console.log(`Mangakakalot: Found ${mangaList.length} manga using selector: ${selector}`);
+        break;
+      }
+    }
+
+    // If still no results, try a more aggressive approach
+    if (mangaList.length === 0) {
+      $('a[href*="/manga/"]').each((_, element) => {
+        const $element = $(element);
+        const url = $element.attr('href') || '';
+        const title = $element.text().trim() || $element.attr('title') || '';
+        
+        if (url && title && title.length > 2) {
+          const urlParts = url.split('/').filter(Boolean);
+          const id = urlParts[urlParts.length - 1] || Math.random().toString(36).substring(7);
+          
+          if (!mangaList.some(m => m.id === id)) {
+            mangaList.push({
+              id,
+              title: title.replace(/\n/g, ' ').trim(),
+              url: url.startsWith('http') ? url : `https://mangakakalot.com${url}`,
+              coverUrl: '',
+            });
+          }
+        }
+      });
+    }
+
+    console.log(`Scraped ${mangaList.length} manga from Mangakakalot`);
+    return mangaList.slice(0, 50); // Limit to 50 results
+  } catch (error) {
+    console.error('Error scraping Mangakakalot:', error);
+    return [];
+  }
+}
