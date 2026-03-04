@@ -22,9 +22,13 @@ export interface SourceScraper {
 
 // Export all available scrapers
 import asuraScansScraper from './asurascans';
+import manganatoScraper from './manganato';
+import mangakakalotScraper from './mangakakalot';
 
 export const sources: Record<string, SourceScraper> = {
   asurascans: asuraScansScraper,
+  manganato: manganatoScraper,
+  mangakakalot: mangakakalotScraper,
 };
 
 export function getScraper(scraperName: string): SourceScraper | null {

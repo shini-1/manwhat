@@ -20,7 +20,18 @@ export async function GET() {
         scraper: 'asurascans',
         active: true,
       },
-      // Add more sources as needed
+      {
+        name: 'MangaNato',
+        url: 'https://manganato.com',
+        scraper: 'manganato',
+        active: true,
+      },
+      {
+        name: 'Mangakakalot',
+        url: 'https://mangakakalot.com',
+        scraper: 'mangakakalot',
+        active: true,
+      },
     ];
 
     await Source.insertMany(defaultSources);
