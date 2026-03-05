@@ -1,49 +1,43 @@
-# TODO: Fix Source Parsing and Add Alternative Sources
+# TODO: Implement Mihon-inspired Parser System
 
-## Task: Fix source parsing using fallback implementation (MangaDex) and placeholder images
+## Task: Implement Mihon-style parsing system for web apps
 
 ## Completed:
 
-### Step 1: Update fallback logic in src/lib/sources/index.ts
-- [x] Only trigger fallback on actual errors, not empty arrays
-- [x] Add better logging for debugging
-- [x] Added alternative sources: Comick, Anilist
-- [x] Implemented fallback chain: External Source -> Comick -> Anilist -> MangaDex
+### Step 1: Create BaseSource class (Mihon ParsedHttpSource equivalent)
+- [x] Created `src/lib/parser/BaseSource.ts` with:
+  - CSS selector-based parsing
+  - Popular manga parsing
+  - Search manga parsing
+  - Latest updates parsing
+  - Manga details parsing
+  - Chapter list parsing
+  - Page list (images) parsing
+  - URL normalization and resolution
 
-### Step 2: Update AsuraScans scraper with better selectors
-- [x] Use more robust CSS selectors for current website structure
-- [x] Handle lazy-loaded images properly
-- [x] Add error handling
+### Step 2: Create TypeScript Models
+- [x] Created `src/lib/parser/models.ts` with:
+  - SManga (manga info)
+  - SChapter (chapter info)
+  - Page (image page)
+  - MangasPage, ChaptersPage, PagesPage (paginated results)
+  - MangaStatus enum (ONGOING, COMPLETED, etc.)
+  - UpdateStrategy enum
 
-### Step 3: Update Manganato scraper with better selectors
-- [x] Use more robust CSS selectors for current website structure
-- [x] Handle lazy-loaded images properly
-- [x] Add error handling
+### Step 3: Create Source Parsers
+- [x] Created AsuraScansParser with CSS selectors
+- [x] Created ManganatoParser with CSS selectors
+- [x] Created sources index for registry
 
-### Step 4: Update Mangakakalot scraper with better selectors
-- [x] Use more robust CSS selectors for current website structure
-- [x] Handle lazy-loaded images properly
-- [x] Add error handling
+### Step 4: Create Parser API Routes
+- [x] Created `/api/parser/sources` - list available sources
+- [x] Created `/api/parser/popular` - get popular manga
+- [x] Created `/api/parser/search` - search manga
+- [x] Created `/api/parser/details` - get manga details
+- [x] Created `/api/parser/chapters` - get chapter list
+- [x] Created `/api/parser/pages` - get page list (images)
 
-### Step 5: Add alternative source options
-- [x] Added Comick API as alternative
-- [x] Added Anilist API as alternative
-- [x] Made fallback chain: External Source -> Comick -> Anilist -> MangaDex
-
-### Step 6: Fix Manga Details Page (Multi-Source Support)
-- [x] Updated `src/app/api/manga/[id]/route.ts` to support multiple APIs:
-  - MangaDex (UUID format)
-  - Comick API
-  - Anilist GraphQL API
-  - Fallback to MangaDex search
-- [x] Updated manga detail page to handle tags from different sources
-
-### Step 7: Fix Popular Manga Page
-- [x] Updated `src/app/api/manga/popular/route.ts` to fetch directly from API sources
-- [x] Default source is now Comick for reliable results
-
-### Step 8: Fix Search Results Page
-- [x] Updated `src/app/api/manga/search/route.ts` to use scrape source with fallback
+### Step 5: Test the parser system
 
 ## Status: COMPLETED
 
