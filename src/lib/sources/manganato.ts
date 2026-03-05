@@ -11,9 +11,14 @@ export interface ScrapedManga {
   description?: string;
 }
 
+/**
+ * Enhanced Manganato scraper with robust selectors
+ */
 export async function scrapeManganato(): Promise<ScrapedManga[]> {
+  const mangaList: ScrapedManga[] = [];
+  
   try {
-    // Try the main home page first
+    console.log('Manganato: Fetching main page...');
     const response = await axios.get('https://manganato.com', {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -24,123 +29,162 @@ export async function scrapeManganato(): Promise<ScrapedManga[]> {
     });
 
     const $ = cheerio.load(response.data);
-    const mangaList: ScrapedManga[] = [];
 
-    // Manganato uses different selectors - try multiple patterns
-    const selectors = [
-      // Main content area selectors
+    // Manganato selector patterns - updated for current site structure
+    const selectorPatterns = [
+      // Home page book items
       '.panel-home-book-item',
+      '.home-page-book-item',
+      // Story items (main content)
       '.story-item',
+      '.story-item-home',
+      // Update items
       '.update-item',
+      '.home-update-item',
+      // Popular items
       '.popular-manga-item',
-      '.home-wrapper .story-item',
-      // Alternative patterns
-      'div.book-item',
-      'div.story-item',
-      '.items .item',
-      // Search results pattern
-      '.search-results .result',
+      '.home-popular-item',
+      // Search results
+      '.search-results .result-item',
       '.story_find .item',
-      // Generic patterns
-      'a[href*="/manga/"]',
+      // Grid items
+      '.book-item',
+      '.manga-item',
+      // GENRES section
+      '.genres-item',
+      // Div with img inside anchor
+      'div[itemtype*="Book"] a[href*="/manga-ninja/"]',
+      'div[itemtype*="Manga"] a[href*="/manga-ninja/"]',
+      // Direct anchor with img pattern
+      'a[href*="/manga-ninja/"]:has(img)',
+      // Generic card pattern
+      '.card-manga',
+      '.item-manga',
+      // Content area patterns
+      '.container .item',
+      '.content .item',
+      // NEW: Main content selectors
+      '.main-content .story-item',
+      '#main-content .story-item',
     ];
 
-    for (const selector of selectors) {
-      if (mangaList.length > 0) break;
+    let foundCount = 0;
+    
+    for (const selector of selectorPatterns) {
+      if (foundCount > 0) break;
       
-      $(selector).each((_, element) => {
-        const $element = $(element);
-        
-        // Try to find title - look in multiple places
-        let title = '';
-        
-        // For anchor tags, try different approaches
-        if ($element.is('a')) {
-          title = $element.attr('title') || 
-                  $element.text().trim() || 
-                  $element.find('img').attr('alt') || '';
-        } else {
-          title = $element.find('.story-title, .title, h3, h4, a').text().trim() ||
-                  $element.attr('title') ||
-                  $element.find('img').attr('alt') ||
-                  '';
-        }
-        
-        // Get URL from anchor tag
-        let url = $element.find('a').attr('href') || $element.attr('href') || '';
-        
-        // Get cover image
-        let coverUrl = $element.find('img').attr('src') || 
-                       $element.find('img').attr('data-src') ||
-                       $element.find('img').attr('data-lazy-src') || '';
-
-        // Clean up title
-        title = title.replace(/\n/g, ' ').trim();
-        
-        // Skip if no valid data
-        if (!title || title.length < 2) return;
-        
-        // For generic anchor selector, filter to only manga URLs
-        if (selector === 'a[href*="/manga/"]' && !url.includes('/manga/')) return;
-        
-        if (!url || !url.includes('/manga/')) return;
-        
-        // Create a unique ID from the URL
-        const urlParts = url.split('/').filter(Boolean);
-        const id = urlParts[urlParts.length - 1] || Math.random().toString(36).substring(7);
-        
-        // Make sure URL is absolute
-        url = url.startsWith('http') ? url : `https://manganato.com${url}`;
-        
-        // Make sure cover URL is absolute
-        if (coverUrl && !coverUrl.startsWith('http')) {
-          coverUrl = coverUrl.startsWith('//') ? `https:${coverUrl}` : `https://manganato.com${coverUrl}`;
-        }
-
-        // Avoid duplicates
-        if (mangaList.some(m => m.id === id || m.title === title)) return;
-
-        mangaList.push({
-          id,
-          title,
-          coverUrl: coverUrl || '',
-          url,
+      const $elements = $(selector);
+      console.log(`Manganato: Trying selector "${selector}" - found ${$elements.length} elements`);
+      
+      if ($elements.length > 0) {
+        $elements.each((_, element) => {
+          if (mangaList.length >= 50) return;
+          
+          const $el = $(element);
+          const $anchor = $el.is('a') ? $el : $el.find('a').first();
+          const $img = $el.is('img') ? $el : $el.find('img').first();
+          
+          // Get URL - Manganato changed to /manga-ninja/ or /manga/
+          let url = $anchor.attr('href') || '';
+          if (!url || (!url.includes('/manga-ninja/') && !url.includes('/manga/'))) return;
+          
+          // Get title - try multiple sources
+          let title = '';
+          if ($img.length > 0) {
+            title = $img.attr('title') || $img.attr('alt') || '';
+          }
+          title = title || $anchor.attr('title') || $anchor.text().trim() || '';
+          title = title.replace(/\n/g, ' ').trim();
+          
+          if (!title || title.length < 2) return;
+          
+          // Get cover image - handle lazy loading
+          let coverUrl = '';
+          if ($img.length > 0) {
+            coverUrl = $img.attr('src') || 
+                       $img.attr('data-src') || 
+                       $img.attr('data-lazy-src') ||
+                       $img.attr('data-original') ||
+                       $img.attr('data-cfsrc') || '';
+          }
+          
+          // Extract ID from URL
+          const urlParts = url.split('/').filter(Boolean);
+          const id = urlParts[urlParts.length - 1] || '';
+          
+          // Make URLs absolute
+          url = url.startsWith('http') ? url : `https://manganato.com${url}`;
+          
+          if (coverUrl && !coverUrl.startsWith('http')) {
+            coverUrl = coverUrl.startsWith('//') ? `https:${coverUrl}` : `https://manganato.com${coverUrl}`;
+          }
+          
+          // Check for duplicates
+          if (mangaList.some(m => m.id === id || m.title === title)) return;
+          
+          mangaList.push({
+            id,
+            title,
+            coverUrl: coverUrl || '',
+            url,
+          });
+          foundCount++;
         });
-      });
-      
-      if (mangaList.length > 0) {
-        console.log(`Manganato: Found ${mangaList.length} manga using selector: ${selector}`);
-        break;
       }
     }
 
-    // If still no results, try a more aggressive approach
+    // If no structured results, try a more generic approach
     if (mangaList.length === 0) {
-      $('a[href*="/manga/"]').each((_, element) => {
-        const $element = $(element);
-        const url = $element.attr('href') || '';
-        const title = $element.text().trim() || $element.attr('title') || '';
+      console.log('Manganato: Trying generic anchor extraction...');
+      
+      $('a[href*="/manga-ninja/"], a[href*="/manga/"]').each((_, el) => {
+        if (mangaList.length >= 50) return;
         
-        if (url && title && title.length > 2) {
-          const urlParts = url.split('/').filter(Boolean);
-          const id = urlParts[urlParts.length - 1] || Math.random().toString(36).substring(7);
-          
-          if (!mangaList.some(m => m.id === id)) {
-            mangaList.push({
-              id,
-              title: title.replace(/\n/g, ' ').trim(),
-              url: url.startsWith('http') ? url : `https://manganato.com${url}`,
-              coverUrl: '',
-            });
-          }
+        const $el = $(el);
+        const $img = $el.find('img').first();
+        const url = $el.attr('href') || '';
+        
+        if (!url || (!url.includes('/manga-ninja/') && !url.includes('/manga/'))) return;
+        
+        let title = $el.attr('title') || 
+                    $img.attr('alt') || 
+                    $el.text().trim() || 
+                    '';
+        title = title.replace(/\n/g, ' ').trim();
+        
+        if (!title || title.length < 2) return;
+        
+        const urlParts = url.split('/').filter(Boolean);
+        const id = urlParts[urlParts.length - 1] || '';
+        
+        let coverUrl = '';
+        if ($img.length > 0) {
+          coverUrl = $img.attr('src') || 
+                     $img.attr('data-src') || 
+                     $img.attr('data-lazy-src') || '';
+        }
+        
+        if (coverUrl && !coverUrl.startsWith('http')) {
+          coverUrl = coverUrl.startsWith('//') ? `https:${coverUrl}` : `https://manganato.com${coverUrl}`;
+        }
+        
+        if (!mangaList.some(m => m.id === id || m.title === title)) {
+          mangaList.push({
+            id,
+            title,
+            coverUrl: coverUrl || '',
+            url: url.startsWith('http') ? url : `https://manganato.com${url}`,
+          });
         }
       });
     }
 
-    console.log(`Scraped ${mangaList.length} manga from Manganato`);
-    return mangaList.slice(0, 50); // Limit to 50 results
+    console.log(`Manganato: Final result - ${mangaList.length} manga scraped`);
+    return mangaList.slice(0, 50);
+    
   } catch (error) {
-    console.error('Error scraping Manganato:', error);
+    console.error('Manganato: Error during scraping:', error);
     return [];
   }
 }
+

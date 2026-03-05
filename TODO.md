@@ -1,43 +1,34 @@
-# TODO: Manga App Development Phases
+# TODO: Fix Source Parsing and Add Alternative Sources
 
-## Phase 1: Frontend Development
-- [x] Modify src/app/page.tsx to include search form for manga titles and display results
-- [x] Create src/app/manga/[id]/page.tsx to display detailed manga information
-- [x] Ensure responsive design and basic error handling in UI
-- [x] Manually test frontend functionality
+## Task: Fix source parsing using fallback implementation (MangaDex) and placeholder images
 
-## Phase 2: Source Integration
-- [x] Create Source model for storing manga sources
-- [x] Implement source scraper interface and implementations
-- [x] Add Asura Scans scraper with web scraping
-- [x] Create API routes for managing sources
-- [x] Add "Sources" button to homepage with modal
-- [x] Implement dynamic manga loading from selected sources
+## Plan:
 
-## Phase 3: Database Integration
-- [x] Expand data storage for user favorites, reading history, or manga metadata
-- [x] Integrate with existing MongoDB setup in src/lib/mongodb.ts
+### Step 1: Update fallback logic in src/lib/sources/index.ts
+- [x] Only trigger fallback on actual errors, not empty arrays
+- [x] Add better logging for debugging
+- [x] Added alternative sources: Comick, Anilist
+- [x] Implemented fallback chain: External Source -> Comick -> Anilist -> MangaDex
 
-## Phase 4: Error Handling and Validation
-- [ ] Enhance API routes with better error responses and input validation
-- [ ] Add rate limiting if needed
+### Step 2: Update AsuraScans scraper with better selectors
+- [x] Use more robust CSS selectors for current website structure
+- [x] Handle lazy-loaded images properly
+- [x] Add error handling
 
-## Phase 5: Testing and Quality Assurance
-- [ ] Implement unit tests for APIs and frontend
-- [ ] Perform integration and end-to-end testing
+### Step 3: Update Manganato scraper with better selectors
+- [x] Use more robust CSS selectors for current website structure
+- [x] Handle lazy-loaded images properly
+- [x] Add error handling
 
-## Phase 6: Performance Optimization
-- [x] Add caching, pagination, or optimize API calls to Mangadex
+### Step 4: Update Mangakakalot scraper with better selectors
+- [x] Use more robust CSS selectors for current website structure
+- [x] Handle lazy-loaded images properly
+- [x] Add error handling
 
-## Phase 7: Additional Features
-- [ ] Add more API routes (e.g., for chapters, user profiles)
-- [ ] Implement features like manga recommendations
-- [ ] Add more manga sources (e.g., MangaKakalot, MangaNato)
+### Step 5: Add alternative source options
+- [x] Added Comick API as alternative
+- [x] Added Anilist API as alternative
+- [x] Made fallback chain: External Source -> Comick -> Anilist -> MangaDex
 
-## Phase 8: Deployment and CI/CD
-- [ ] Set up deployment to Vercel or another platform
-- [ ] Configure CI/CD pipelines
+## Status: COMPLETED
 
-## Phase 10: Documentation
-- [ ] Create API documentation
-- [ ] Update README.md with usage instructions
