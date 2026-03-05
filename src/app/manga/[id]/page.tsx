@@ -4,28 +4,32 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
+interface MangaAttributes {
+  title: {
+    en?: string;
+    [key: string]: string | undefined;
+  };
+  description?: {
+    en?: string;
+    [key: string]: string | undefined;
+  };
+  status?: string;
+  year?: number;
+  tags?: Array<{
+    attributes: {
+      name: {
+        en: string;
+      };
+    };
+  }>;
+  cover_art?: {
+    fileName: string;
+  };
+}
+
 interface MangaDetail {
   id: string;
-  attributes: {
-    title: {
-      en?: string;
-    };
-    description?: {
-      en?: string;
-    };
-    status?: string;
-    year?: number;
-    tags?: Array<{
-      attributes: {
-        name: {
-          en: string;
-        };
-      };
-    }>;
-    cover_art?: {
-      fileName: string;
-    };
-  };
+  attributes: MangaAttributes;
 }
 
 export default function MangaDetail() {
@@ -97,9 +101,40 @@ export default function MangaDetail() {
     );
   }
 
-  const coverUrl = manga.attributes.cover_art
-    ? `https://uploads.mangadex.org/covers/${manga.id}/${manga.attributes.cover_art.fileName}.256.jpg`
-    : null;
+  // Try to get cover URL - check multiple sources
+  let coverUrl: string | null = null;
+  
+  // Try MangaDex format first
+  if (manga.attributes.cover_art?.fileName) {
+    coverUrl = `https://uploads.mangadex.org/covers/${manga.id}/${manga.attributes.cover_art.fileName}.256.jpg`;
+  }
+  
+  // Fallback: try to find any title in the object
+  if (!coverUrl) {
+    const titleKeys = Object.keys(manga.attributes.title);
+    const mainTitle = manga.attributes.title[titleKeys[0]] || 'Manga';
+    
+    // Try Comick cover
+    if (manga.attributes.cover_art?.fileName?.includes('comick')) {
+      coverUrl = manga.attributes.cover_art.fileName;
+    }
+  }
+
+  // Get the best available title
+  const getTitle = () => {
+    return manga.attributes.title?.en || 
+           manga.attributes.title?.['ja-ro'] || 
+           Object.values(manga.attributes.title || {})[0] || 
+           'Untitled';
+  };
+
+  // Get the best available description
+  const getDescription = () => {
+    if (!manga.attributes.description) return 'No description available.';
+    return manga.attributes.description?.en || 
+           Object.values(manga.attributes.description || {})[0] || 
+           'No description available.';
+  };
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black font-sans">
@@ -117,10 +152,11 @@ export default function MangaDetail() {
               <div className="flex-shrink-0">
                 <img
                   src={coverUrl}
-                  alt={`${manga.attributes.title?.en || 'Manga'} cover`}
+                  alt={`${getTitle()} cover`}
                   className="w-48 h-72 object-cover rounded-lg shadow-md"
                   onError={(e) => {
-                    e.currentTarget.style.display = 'none';
+                    // Hide the image on error
+                    (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
               </div>
@@ -128,7 +164,7 @@ export default function MangaDetail() {
 
             <div className="flex-1">
               <h1 className="text-3xl font-bold mb-4 text-black dark:text-zinc-50">
-                {manga.attributes.title?.en || 'Untitled'}
+                {getTitle()}
               </h1>
 
               <div className="mb-4">
@@ -151,14 +187,24 @@ export default function MangaDetail() {
                 <div className="mb-4">
                   <span className="font-semibold text-gray-700 dark:text-zinc-300">Tags: </span>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {manga.attributes.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300 text-sm rounded"
-                      >
-                        {tag.attributes.name.en}
-                      </span>
-                    ))}
+                    {manga.attributes.tags.map((tag: unknown, index: number) => {
+                      let tagValue = '';
+                      if (typeof tag === 'string') {
+                        tagValue = tag;
+                      } else if (tag && typeof tag === 'object' && 'attributes' in tag) {
+                        const tagObj = tag as { attributes?: { name?: { en?: string } } };
+                        tagValue = tagObj.attributes?.name?.en || '';
+                      }
+                      if (!tagValue) return null;
+                      return (
+                        <span
+                          key={index}
+                          className="px-2 py-1 bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300 text-sm rounded"
+                        >
+                          {tagValue}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -168,7 +214,7 @@ export default function MangaDetail() {
                   Description
                 </h2>
                 <p className="text-gray-600 dark:text-zinc-400 leading-relaxed">
-                  {manga.attributes.description?.en || 'No description available.'}
+                  {getDescription()}
                 </p>
               </div>
             </div>
@@ -178,3 +224,4 @@ export default function MangaDetail() {
     </div>
   );
 }
+

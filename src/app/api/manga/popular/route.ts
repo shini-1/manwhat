@@ -1,34 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
-import Manga from '@/lib/models/Manga';
+import { scrapeSource } from '@/lib/sources';
 
 export async function GET(request: NextRequest) {
   try {
-    await dbConnect();
-
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
-    const category = searchParams.get('category') || 'all';
+    const source = searchParams.get('source') || 'comick'; // Default to Comick for reliable results
 
-    // Get popular manga from database, sorted by something (could be by creation date or popularity)
-    const manga = await Manga.find({})
-      .sort({ createdAt: -1 })
-      .limit(Math.min(limit, 100));
+    console.log(`Fetching popular manga from source: ${source}`);
+
+    // Fetch from the specified source (defaults to Comick for reliable results)
+    const mangaList = await scrapeSource(source);
+
+    if (!mangaList || mangaList.length === 0) {
+      // If source fails, try MangaDex as fallback
+      console.log('Primary source failed, trying MangaDex fallback');
+      const fallbackList = await scrapeSource('mangadex');
+      
+      return NextResponse.json({
+        data: fallbackList.slice(0, limit).map((manga) => ({
+          id: manga.id,
+          attributes: {
+            title: {
+              en: manga.title,
+            },
+            description: {
+              en: manga.description || '',
+            },
+            status: manga.status || 'unknown',
+            year: undefined,
+            tags: manga.genres || [],
+            coverUrl: manga.coverUrl || '',
+            url: manga.url || '',
+          },
+        })),
+      });
+    }
 
     return NextResponse.json({
-      data: manga.map((m) => ({
-        id: m.mangaId,
+      data: mangaList.slice(0, limit).map((manga) => ({
+        id: manga.id,
         attributes: {
           title: {
-            en: m.title,
+            en: manga.title,
           },
           description: {
-            en: m.description || '',
+            en: manga.description || '',
           },
-          status: m.status,
-          year: m.year,
-          tags: m.tags,
-          coverUrl: m.coverUrl,
+          status: manga.status || 'unknown',
+          year: undefined,
+          tags: manga.genres || [],
+          coverUrl: manga.coverUrl || '',
+          url: manga.url || '',
         },
       })),
     });
@@ -40,3 +63,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
