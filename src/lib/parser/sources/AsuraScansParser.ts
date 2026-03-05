@@ -29,7 +29,7 @@ const asuraScansSelectors: SourceSelectors = {
   latestUpdatesNextPageSelector: '.pagination .next a',
 
   // Manga details
-  mangaDetailsentryTitleSelector: '.-title, .post-title, h1.title, h1',
+  mangaDetailsTitleSelector: '.-title, .post-title, h1.title, h1',
   mangaDetailsAuthorSelector: '.author, .artist, .story-info .info-author, .fmed b:contains("Author")',
   mangaDetailsArtistSelector: '.artist, .story-info .info-artist',
   mangaDetailsDescriptionSelector: '.description, .entry-content, .story-description, .summary',
@@ -101,7 +101,8 @@ export class AsuraScansParser extends ParsedHttpSource {
     let author = '';
     let artist = '';
     const infoSelectors = $('.story-info .info, .fmed .ftr');
-    infoSelectors.each((_, el) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    infoSelectors.each((_: any, el: any) => {
       const label = $(el).find('b, span:first-child').text().toLowerCase();
       const value = $(el).find('span:last-child, a').text().trim();
       if (label.includes('author')) author = value;
@@ -117,7 +118,8 @@ export class AsuraScansParser extends ParsedHttpSource {
 
     // Genres
     const genres: string[] = [];
-    $('.story-info .info-genre a, .genres a, .tags a').each((_, el) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $('.story-info .info-genre a, .genres a, .tags a').each((_: any, el: any) => {
       const genre = $(el).text().trim();
       if (genre) genres.push(genre);
     });
@@ -168,7 +170,7 @@ export class AsuraScansParser extends ParsedHttpSource {
       const $chapters = $(selector);
       if ($chapters.length > 0) {
         foundChapters = true;
-        $chapters.each((_, el) => {
+        $chapters.each((_: any, el: any) => {
           const $el = $(el);
           const url = $el.attr('href') || '';
           const name = $el.text().trim() || 'Chapter';
@@ -201,7 +203,7 @@ export class AsuraScansParser extends ParsedHttpSource {
 
     // If no structured chapters found, try generic approach
     if (!foundChapters) {
-      $('a[href*="/chapter"]').each((_, el) => {
+      $('a[href*="/chapter"]').each((_: any, el: any) => {
         const $el = $(el);
         const url = $el.attr('href') || '';
         const name = $el.text().trim() || 'Chapter';

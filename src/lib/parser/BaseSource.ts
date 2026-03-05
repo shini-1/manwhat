@@ -5,7 +5,6 @@
 
 import axios, { AxiosInstance } from 'axios';
 import * as cheerio from 'cheerio';
-import type { Cheerio } from 'cheerio';
 import {
   SManga,
   SMangaImpl,
@@ -111,7 +110,8 @@ export abstract class ParsedHttpSource {
   /**
    * Fetch a page from the source
    */
-  async fetch(url: string): Promise<cheerio.Root> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async fetch(url: string): Promise<any> {
     const response = await this.client.get(url);
     return cheerio.load(response.data);
   }
@@ -139,7 +139,8 @@ export abstract class ParsedHttpSource {
   /**
    * Parse manga from element (Mihon: popularMangaFromElement)
    */
-  protected popularMangaFromElement($el: cheerio.Cheerio): SManga {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected popularMangaFromElement($el: any): SManga {
     const manga = SMangaImpl.create();
     
     // Get URL
@@ -187,7 +188,8 @@ export abstract class ParsedHttpSource {
   /**
    * Parse manga from search element (Mihon: searchMangaFromElement)
    */
-  protected searchMangaFromElement($el: cheerio.Cheerio): SManga {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected searchMangaFromElement($el: any): SManga {
     const manga = SMangaImpl.create();
     
     const url = $el.attr(this.selectors.searchMangaUrlAttr) || 
@@ -230,7 +232,8 @@ export abstract class ParsedHttpSource {
   /**
    * Parse manga from latest updates element (Mihon: latestUpdatesFromElement)
    */
-  protected latestUpdatesFromElement($el: cheerio.Cheerio): SManga {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected latestUpdatesFromElement($el: any): SManga {
     const manga = SMangaImpl.create();
     
     const url = $el.attr(this.selectors.latestUpdatesUrlAttr) || 
@@ -261,7 +264,8 @@ export abstract class ParsedHttpSource {
   /**
    * Parse manga details from document (Mihon: mangaDetailsParse)
    */
-  protected mangaDetailsParse($: cheerio.Root): SManga {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected mangaDetailsParse($: any): SManga {
     const manga = SMangaImpl.create();
     manga.url = $.root().html() ? '' : ''; // URL is set externally
     manga.initialized = true;
@@ -339,7 +343,8 @@ export abstract class ParsedHttpSource {
   /**
    * Parse chapter from element (Mihon: chapterFromElement)
    */
-  protected chapterFromElement($el: cheerio.Cheerio): SChapter {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected chapterFromElement($el: any): SChapter {
     const chapter = SChapterImpl.create();
 
     // URL
@@ -419,7 +424,8 @@ export abstract class ParsedHttpSource {
   /**
    * Parse pages from document (Mihon: pageListParse)
    */
-  protected pageListParse($: cheerio.Root): PagesPageImpl {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected pageListParse($: any): PagesPageImpl {
     const elements = $(this.selectors.pageListSelector);
     const pages = elements.map((index, el) => {
       const page = PageImpl.create(index);
@@ -451,7 +457,8 @@ export abstract class ParsedHttpSource {
   /**
    * Extract image URL from page (Mihon: imageUrlParse)
    */
-  protected imageUrlParse($: cheerio.Root): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected imageUrlParse($: any): string {
     // Default: try common image selectors
     const imgSelectors = [
       '#page img',
@@ -475,7 +482,8 @@ export abstract class ParsedHttpSource {
   /**
    * Check if there's a next page
    */
-  protected hasNextPage($: cheerio.Root, selector: string | null): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected hasNextPage($: any, selector: string | null): boolean {
     if (!selector) return false;
     return $(selector).length > 0;
   }
