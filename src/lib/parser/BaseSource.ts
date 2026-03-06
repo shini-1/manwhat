@@ -123,7 +123,8 @@ export abstract class ParsedHttpSource {
     const $ = await this.fetch(this.getPopularMangaUrl(page));
     const elements = $(this.selectors.popularMangaSelector);
 
-    const mangas = elements.map((_, el) => this.popularMangaFromElement($(el))).get();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mangas = elements.map((_: any, el: any) => this.popularMangaFromElement($(el))).get();
     const hasNextPage = this.hasNextPage($, this.selectors.popularMangaNextPageSelector);
 
     return MangasPageImpl.create(mangas, hasNextPage);
@@ -172,7 +173,8 @@ export abstract class ParsedHttpSource {
     const $ = await this.fetch(this.getSearchMangaUrl(query, page));
     const elements = $(this.selectors.searchMangaSelector);
 
-    const mangas = elements.map((_, el) => this.searchMangaFromElement($(el))).get();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mangas = elements.map((_: any, el: any) => this.searchMangaFromElement($(el))).get();
     const hasNextPage = this.hasNextPage($, this.selectors.searchMangaNextPageSelector);
 
     return MangasPageImpl.create(mangas, hasNextPage);
@@ -216,7 +218,8 @@ export abstract class ParsedHttpSource {
     const $ = await this.fetch(this.getLatestUpdatesUrl(page));
     const elements = $(this.selectors.latestUpdatesSelector);
 
-    const mangas = elements.map((_, el) => this.latestUpdatesFromElement($(el))).get();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mangas = elements.map((_: any, el: any) => this.latestUpdatesFromElement($(el))).get();
     const hasNextPage = this.hasNextPage($, this.selectors.latestUpdatesNextPageSelector);
 
     return MangasPageImpl.create(mangas, hasNextPage);
@@ -292,7 +295,8 @@ export abstract class ParsedHttpSource {
 
     // Genres
     const genres: string[] = [];
-    $(this.selectors.mangaDetailsGenreSelector).each((_, el) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $(this.selectors.mangaDetailsGenreSelector).each((_: any, el: any) => {
       const genre = $(el).text().trim();
       if (genre) genres.push(genre);
     });
@@ -336,7 +340,8 @@ export abstract class ParsedHttpSource {
     const $ = await this.fetch(mangaUrl);
     const elements = $(this.selectors.chapterListSelector);
 
-    const chapters = elements.map((_, el) => this.chapterFromElement($(el))).get();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const chapters = elements.map((_: any, el: any) => this.chapterFromElement($(el))).get();
     return ChaptersPageImpl.create(chapters);
   }
 
@@ -427,7 +432,8 @@ export abstract class ParsedHttpSource {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected pageListParse($: any): PagesPageImpl {
     const elements = $(this.selectors.pageListSelector);
-    const pages = elements.map((index, el) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pages = elements.map((index: any, el: any) => {
       const page = PageImpl.create(index);
       
       // Image URL
