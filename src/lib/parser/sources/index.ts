@@ -2,7 +2,7 @@
  * Parser Sources Index - Mihon-inspired source registry
  */
 
-import { ParsedHttpSource } from '../BaseSource';
+import type { ParsedHttpSource } from '../BaseSource';
 import { AsuraScansParser } from './AsuraScansParser';
 import { ManganatoParser } from './ManganatoParser';
 
